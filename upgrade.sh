@@ -11,7 +11,7 @@ STATUSFILE=/var/config/.installer
 VERSION=2.1-r5
 FILENAME=poly-packet-forwarder_${VERSION}_arm926ejste.ipk
 #URL=https://raw.github.com/kersing/packet_forwarder/master/multitech-bin/${FILENAME}
-URL=https://raw.github.com/vm2m/multitech-installer/master/${FILENAME}
+URL=https://raw.github.com/vm2m/multitech-installer/naxoo/${FILENAME}
 
 if [ ! -f $STATUSFILE ] ; then
 	touch /var/config/.installer

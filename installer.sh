@@ -10,7 +10,8 @@
 STATUSFILE=/var/config/.installer
 VERSION=3.0.0-r14
 FILENAME=mp-packet-forwarder_${VERSION}_arm926ejste.ipk
-URL=https://raw.github.com/kersing/multitech-installer/master/${FILENAME}
+#URL=https://raw.github.com/kersing/multitech-installer/master/${FILENAME}
+URL=https://raw.github.com/vm2m/multitech-installer/master/${FILENAME}
 
 grep package $STATUSFILE > /dev/null 2> /dev/null
 if [ $? -eq 0 ] ; then

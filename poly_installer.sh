@@ -8,20 +8,14 @@
 #
 
 STATUSFILE=/var/config/.installer
-VERSION=3.0.0-r14
-FILENAME=mp-packet-forwarder_${VERSION}_arm926ejste.ipk
-#URL=https://raw.github.com/kersing/multitech-installer/master/${FILENAME}
-URL=https://raw.github.com/vm2m/multitech-installer/master/${FILENAME}
+VERSION=2.1-r5
+FILENAME=poly-packet-forwarder_${VERSION}_arm926ejste.ipk
+URL=https://raw.github.com/kersing/multitech-installer/master/${FILENAME}
 
 grep package $STATUSFILE > /dev/null 2> /dev/null
-if [ $? -eq 0 ] ; then
-	if [ ! -x /opt/lora/mp_pkt_fwd -a ! -x /opt/lora/poly_pkt_fwd ] ; then
-		# statusfile not reset, but gateway has been reflashed, clear file
-		rm $STATUSFILE
-		# and remove software to force re-install
-		opkg remove poly-packet-forwarder > /dev/null 2>&1
-		opkg remove mp-packet-forwarder > /dev/null 2>&1
-	fi
+if [ $? -eq 0 -a ! -x /opt/lora/poly_pkt_fwd ] ; then
+	# statusfile not reset, but gateway has been reflashed, clear file
+	rm $STATUSFILE
 fi
 
 if [ ! -f $STATUSFILE ] ; then
@@ -667,7 +661,6 @@ if [ $? -ne 0 ] ; then
 				;;
 		esac
 	fi
-	config="https://raw.githubusercontent.com/vm2m/gateway-conf/master/NAXOO-global_conf.json"
 	echo "$config" > /var/config/lora/global_conf_src
 	echo "location" >> $STATUSFILE
 fi
@@ -750,50 +743,28 @@ _EOF_
 fi
 
 # Disable the MultiTech lora server processes
+# Do we want to remove the software as well??
 grep disable-mtech $STATUSFILE > /dev/null 2> /dev/null
 if [ $? -ne 0 ] ; then
 	echo "Disable MultiTech packet forwarder"
 	/etc/init.d/lora-network-server stop
-	update-rc.d -f lora-network-server remove > /dev/null 2> /dev/null
-	if [ -f /etc/init.d/lora-packet-forwarder ] ; then
-		/etc/init.d/lora-packet-forwarder stop
-		update-rc.d -f lora-packet-forwarder remove > /dev/null 2> /dev/null
-	fi
 	cat << _EOF_ > /etc/default/lora-network-server
 # set to "yes" or "no" to control starting on boot
 ENABLED="no"
 _EOF_
-	if [ -f /etc/default/lora-packet-forwarder ] ; then
-		cat << _EOF_ > /etc/default/lora-packet-forwarder
-# set to "yes" or "no" to control starting on boot
-ENABLED="no"
-_EOF_
-	fi
 	echo "disable-mtech" >> $STATUSFILE
 fi
 
-if [ -f /etc/init.d/ttn-pkt-forwarder ] ; then
-	echo "Stopping existing forwarder"
-	/etc/init.d/ttn-pkt-forwarder stop
-fi
-
-# Check for previous forwarder
-opkg list-installed poly-packet-forwarder | grep poly-packet-forwarder > /dev/null 2> /dev/null
-if [ $? -eq 0 ] ; then
-	echo "Removing obsolete Poly Packet Forwarder"
-	opkg remove poly-packet-forwarder
-fi
-
-fnd=$(opkg list-installed mp-packet-forwarder)
-version=$(echo $fnd | cut -d' ' -f 3)
-if [ X"$version" != X"$VERSION" ] ; then
-	wget $URL -O /tmp/$FILENAME -o /dev/null --no-check-certificate
-	if [ X"$version" == X"" ] ; then
-		echo "Installing TTN Multi Protocol Packet Forwarder"
-	else
-		echo "Upgrading TTN Multi Protocol Packet Forwarder"
+grep package $STATUSFILE > /dev/null 2> /dev/null
+if [ $? -ne 0 ] ; then
+	fnd=$(opkg list-installed poly-packet-forwarder)
+	version=$(echo $fnd | cut -d' ' -f 3)
+	if [ X"$version" != X"$VERSION" ] ; then
+		echo "Installing TTN Poly Packet Forwarder"
+		wget $URL -O /tmp/$FILENAME -o /dev/null --no-check-certificate
+		opkg install /tmp/$FILENAME
 	fi
-	opkg install /tmp/$FILENAME
+	echo "package" >> $STATUSFILE
 fi
 
 # Get global config
@@ -811,9 +782,8 @@ fi
 # Everything is in place, start forwarder
 /etc/init.d/ttn-pkt-forwarder start
 
-echo "The installation is now complete."
-echo "Check the gateway output using:"
-echo "tail -f /var/log/lora-pkt-fwd.log"
-echo "(It might take some minutes for the first output to appear!)"
-echo "Check the gateways last seen status in the TTN console after"
-echo "a few minutes to verify the setup is working correctly"
+echo "The installation is now complete. Please register your gateway"
+echo "at The Things Network ( https://www.thethingsnetwork.org ,"
+echo "click on 'Hi <your name>' at the right of the menu bar, select"
+echo "'My Profile', scroll down to select 'Add Gateway') using"
+echo "gateway ID: $gwid"

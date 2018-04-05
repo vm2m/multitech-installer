@@ -645,8 +645,8 @@ echo "$config" > /var/config/lora/global_conf_src
 echo "location" >> $STATUSFILE
 
 # Create lora configuration directory and initial files
-grep loraconf $STATUSFILE > /dev/null 2> /dev/null
-if [ $? -ne 0 ] ; then
+# grep loraconf $STATUSFILE > /dev/null 2> /dev/null
+# if [ $? -ne 0 ] ; then
 	got_it="No"
 	while [ "$got_it" != "Yes" ] ; do
 		echo "SETUP LORA GATEWAY CONFIGURATION"
@@ -719,7 +719,7 @@ _EOF_
 }
 _EOF_
 	echo "loraconf" >> $STATUSFILE
-fi
+# fi
 
 # Disable the MultiTech lora server processes
 grep disable-mtech $STATUSFILE > /dev/null 2> /dev/null

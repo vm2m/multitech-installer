@@ -768,6 +768,10 @@ if [ X"$version" != X"$VERSION" ] ; then
 	opkg install /tmp/$FILENAME
 fi
 
+if [ ! -f /var/config/lora/multitech_overrides.json  ] ; then
+	wget https://raw.githubusercontent.com/vm2m/multitech-installer/naxoo/multitech_overrides.json -O /var/config/lora/multitech_overrides.json -o /dev/null --no-check-certificate
+fi
+
 # Get global config
 echo "Get up-to-date TTN configuration for packet forwarder"
 read url < /var/config/lora/global_conf_src

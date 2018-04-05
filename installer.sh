@@ -8,7 +8,7 @@
 #
 
 STATUSFILE=/var/config/.installer
-VERSION=3.0.0-r20
+VERSION=3.0.20-r1
 FILENAME=mp-packet-forwarder_${VERSION}_arm926ejste.ipk
 #URL=https://raw.github.com/kersing/multitech-installer/master/${FILENAME}
 URL=https://github.com/vm2m/multitech-installer/blob/naxoo/${FILENAME}

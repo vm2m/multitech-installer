@@ -639,87 +639,106 @@ if [ ! -d /var/config/lora ] ; then
 	mkdir /var/config/lora
 fi	
 
-# Ask for location/configuration
-config="https://raw.githubusercontent.com/vm2m/gateway-conf/master/NAXOO-global_conf.json"
-echo "$config" > /var/config/lora/global_conf_src
-echo "location" >> $STATUSFILE
+skip=0
+gwname=""
+gwkey=""
+grep '"serv_type": "ttn"' /var/config/lora/local_conf.json > /dev/null 2> /dev/null
+if [ $? -eq 0 ] ; then
+	echo "Gateway seems to be configured for TTN already, update configuration?"
+	doselect Yes No
+	if [ "$select_result" == "No" ] ; then
+		skip=1
+	else
+		gwname=$(grep -oE '"serv_gw_id": "[^\\"]*"' /var/config/lora/local_conf.json | sed -e 's/.*": "//' -e 's/"//g')
+		gwkey=$(grep -oE '"serv_gw_key": "[^\\"]*"' /var/config/lora/local_conf.json | sed -e 's/.*": "//' -e 's/"//g')
+	fi
+fi
 
-# Create lora configuration directory and initial files
-# grep loraconf $STATUSFILE > /dev/null 2> /dev/null
-# if [ $? -ne 0 ] ; then
+
+if [ $skip -eq 0 ] ; then
+	# Get data from TTN console
+	echo "Provide the gateway registration data from the TTN console"
+	echo "gateway should be registered *NOT* using 'legacy packet forwarder'"
+
+	frequrl="";
+	freqplan="";
+	router="";
+	descr="";
+
+	while :; do
+		if [ X"$gwkey" == X"" ] ; then
+			echo "Please enter gateway informtion:"
+			echo -n "Gateway ID: "
+			read gwname
+			echo -n "Gateway Key: "
+			read gwkey
+		fi
+		echo
+		echo "Gateway ID: $gwname"
+		echo "Gateway Key: $gwkey"
+		echo "Are these values correct?"
+		doselect Yes No
+		if [ "$select_result" == "Yes" ] ; then
+			wget --header="Key: $gwkey" https://account.thethingsnetwork.org/gateways/$gwname -O /tmp/gwinfo -o /tmp/getres --no-check-certificate
+			grep "frequency_plan" /tmp/gwinfo > /dev/null 2> /dev/null
+			if [ $? -eq 0 ] ; then
+			frequrl="https://raw.githubusercontent.com/vm2m/gateway-conf/master/NAXOO-global_conf.json"
+			freqplan="EU_863_870"
+			router="routing-naxoo.vm2m.net:1882"
+			descr="Naxoo TTN Gateway"
+		else
+			gwname=""
+			gwkey=""
+		fi
+	done
+
+
+	# Create lora configuration directory and initial files
 	got_it="No"
 	while [ "$got_it" != "Yes" ] ; do
 		echo "SETUP LORA GATEWAY CONFIGURATION"
 		echo -n "E-mail address of gateway operator: "
 		read email
-		echo -n "Gateway description: "
-		read descr
-		echo "Include location information?"
-		echo "NOTE: No location information means the gateway status information will not be available on-line"
-		doselect Yes No
-		if [ "$select_result" = "Yes" ] ; then
-			echo "Gateway location information"
-			echo -n "latitude: "
-			read lat
-			echo -n "longitude: "
-			read lon
-			echo -n "altitude: "
-			read alt
-		else
-			lat=0
-			lon=0
-			alt=0
-		fi
 		echo ""
-		echo "Your gateway information is:"
-		echo "e-mail contact: $email"
-		echo "description   : $descr"
-		if [ X"$lat" != X"0" -o X"$lon" != X"0" ] ; then
-			echo "Check Location: https://maps.google.com/?q=$lat,$lon"
-		fi
+		echo "Description (from TTN): $descr"
+		echo "Frequency plan (from TTN): $freqplan"
 		echo ""
 		echo "Is the information correct?"
 		doselect Yes No
 		got_it=$select_result
 	done
+	echo -n "$frequrl" > /var/config/lora/global_conf_src
 	gwid=$(mts-io-sysfs show lora/eui 2> /dev/null | sed 's/://g')
 	if [ X"$gwid" == X"" ] ; then
 		echo "FATAL ERROR: could not obtain gateway id, Lora card not found"
 		exit 1
 	fi
 
-	cat << _EOF_ > /var/config/lora/local_conf.json
+		cat << _EOF_ > /var/config/lora/local_conf.json
 {
 /* Settings defined in global_conf will be overwritten by those in local_conf */
     "gateway_conf": {
-        /* gateway_ID is based on unique hardware ID, do not edit */
-        "gateway_ID": "$gwid",
-        /* Email of gateway operator, max 40 chars*/
-        "contact_email": "$email", 
-        /* Public description of this device, max 64 chars */
-        "description": "$descr",
-        /* Enter VALID GPS coordinates below before enabling fake GPS */
-_EOF_
-        if [ X"$lat" != X"0" -o X"$lon" != X"0" ] ; then
-        cat << _EOF_ >> /var/config/lora/local_conf.json
-        "gps": true,
-        "fake_gps": true,
-        "ref_latitude": $lat,
-        "ref_longitude": $lon,
-        "ref_altitude": $alt
-_EOF_
-        else
-        cat << _EOF_ >> /var/config/lora/local_conf.json
-        "gps": false,
-        "fake_gps": false
-_EOF_
-        fi
-        cat << _EOF_ >> /var/config/lora/local_conf.json
+	/* gateway_ID is based on unique hardware ID, do not edit */
+	"gateway_ID": "$gwid",
+	/* Email of gateway operator, max 40 chars*/
+	"contact_email": "$email", 
+	/* Public description of this device, max 64 chars */
+	"description": "$descr",
+	"gps": false,
+	"fake_gps": false,
+	"servers": [
+		{
+			"serv_type": "ttn",
+			"server_address": "$router",
+			"serv_gw_id": "$gwname",
+			"serv_gw_key": "$gwkey",
+			"serv_enabled": true
+		}
+	]
     }
 }
 _EOF_
-	echo "loraconf" >> $STATUSFILE
-# fi
+fi
 
 # Disable the MultiTech lora server processes
 grep disable-mtech $STATUSFILE > /dev/null 2> /dev/null
@@ -766,10 +785,6 @@ if [ X"$version" != X"$VERSION" ] ; then
 		echo "Upgrading TTN Multi Protocol Packet Forwarder"
 	fi
 	opkg install /tmp/$FILENAME
-fi
-
-if [ ! -f /var/config/lora/multitech_overrides.json  ] ; then
-	wget https://raw.githubusercontent.com/vm2m/multitech-installer/naxoo/multitech_overrides.json -O /var/config/lora/multitech_overrides.json -o /dev/null --no-check-certificate
 fi
 
 # Get global config

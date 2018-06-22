@@ -683,6 +683,7 @@ if [ $skip -eq 0 ] ; then
 			freqplan="EU_863_870"
 			router="routing-naxoo.vm2m.net:1882"
 			descr="Naxoo TTN Gateway"
+			break
 		else
 			gwname=""
 			gwkey=""

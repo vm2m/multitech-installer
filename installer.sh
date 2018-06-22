@@ -679,9 +679,6 @@ if [ $skip -eq 0 ] ; then
 		echo "Are these values correct?"
 		doselect Yes No
 		if [ "$select_result" == "Yes" ] ; then
-			wget --header="Key: $gwkey" https://account.thethingsnetwork.org/gateways/$gwname -O /tmp/gwinfo -o /tmp/getres --no-check-certificate
-			grep "frequency_plan" /tmp/gwinfo > /dev/null 2> /dev/null
-			if [ $? -eq 0 ] ; then
 			frequrl="https://raw.githubusercontent.com/vm2m/gateway-conf/master/NAXOO-global_conf.json"
 			freqplan="EU_863_870"
 			router="routing-naxoo.vm2m.net:1882"

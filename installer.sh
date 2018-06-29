@@ -8,9 +8,8 @@
 #
 
 STATUSFILE=/var/config/.installer
-VERSION=3.0.0-r14
+VERSION=3.0.20-r1
 FILENAME=mp-packet-forwarder_${VERSION}_arm926ejste.ipk
-#URL=https://raw.github.com/kersing/multitech-installer/master/${FILENAME}
 URL=https://raw.github.com/vm2m/multitech-installer/master/${FILENAME}
 
 grep package $STATUSFILE > /dev/null 2> /dev/null
@@ -654,11 +653,11 @@ if [ $? -eq 0 ] ; then
 	fi
 fi
 
+
 if [ $skip -eq 0 ] ; then
 	# Get data from TTN console
 	echo "Provide the gateway registration data from the TTN console"
-	echo "gateway should registered using 'gateway-connector'"
-	echo "See help at https://www.thethingsnetwork.org/docs/gateways/registration.html#via-gateway-connector"
+	echo "gateway should be registered *NOT* using 'legacy packet forwarder'"
 
 	frequrl="";
 	freqplan="";
@@ -679,32 +678,11 @@ if [ $skip -eq 0 ] ; then
 		echo "Are these values correct?"
 		doselect Yes No
 		if [ "$select_result" == "Yes" ] ; then
-			wget --header="Key: $gwkey" https://account.thethingsnetwork.org/gateways/$gwname -O /tmp/gwinfo -o /tmp/getres --no-check-certificate
-			grep "frequency_plan" /tmp/gwinfo > /dev/null 2> /dev/null
-			if [ $? -eq 0 ] ; then
-			frequrl=$(grep -oE '"frequency_plan_url":"[^\\"]*",' /tmp/gwinfo | sed -e 's/.*":"//' -e 's/",//')
-			freqplan=$(grep -oE '"frequency_plan":"[^\\"]*",' /tmp/gwinfo | sed -e 's/.*":"//' -e 's/",//')
-			router=$(grep -oE '"router":\{"[^\}]*},' /tmp/gwinfo | grep -oE '"mqtt_address":"[^\\"]*"' | sed -e 's#mqt.*://##' -e 's/.*":"//' -e 's/"//g' -e 's/:.*//')
-			descr=$(grep -oE '"description":"[^\\"]*",' /tmp/gwinfo | sed -e 's/.*":"//' -e 's/",//')
-
-			# check for valid router information
-			if [ X"$router" == X"" ] ; then
-				echo ""
-				echo ""
-				echo ""
-				echo ""
-				echo "ERROR:"
-				echo "Router value not set in TTN console. "
-				echo "Please go to gateway 'Settings' and select"
-				echo "the correct router for your region and retry."
-				echo ""
-				continue
-			fi
-				break
-			else
-				echo "Could not get configuration information."
-				tail -2 /tmp/getres | head -1
-			fi
+			frequrl="https://raw.githubusercontent.com/vm2m/gateway-conf/master/EU-global_conf.json"
+			freqplan="EU_863_870"
+			router="ttn.vm2m.net"
+			descr="VM2M Private TTN Gateway"
+			break
 		else
 			gwname=""
 			gwkey=""

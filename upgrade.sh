@@ -102,7 +102,7 @@ if [ $? -ne 0  -a ! -f /var/config/lora/global_conf_src ] ; then
 		echo "Detected 868MHz card, use TTN 868 configuation?"
 		doselect Yes No
 		if [ "$select_result" == "Yes" ] ; then
-			config="https://raw.githubusercontent.com/TheThingsNetwork/gateway-conf/master/EU-global_conf.json"
+			config="https://raw.githubusercontent.com/vm2m/gateway-conf/master/EU-global_conf.json"
 		fi
 	fi
 	if [ X"$config" == X"" ] ; then
@@ -110,13 +110,13 @@ if [ $? -ne 0  -a ! -f /var/config/lora/global_conf_src ] ; then
 		doselect EU868 AU915 US915
 		case $select_result in
 			EU868)
-				config="https://raw.githubusercontent.com/TheThingsNetwork/gateway-conf/master/EU-global_conf.json"
+				config="https://raw.githubusercontent.com/vm2m/gateway-conf/master/EU-global_conf.json"
 				;;
 			AU915)
-				config="https://raw.githubusercontent.com/TheThingsNetwork/gateway-conf/master/AU-global_conf.json"
+				config="https://raw.githubusercontent.com/vm2m/gateway-conf/master/AU-global_conf.json"
 				;;
 			US915)
-				config="https://raw.githubusercontent.com/TheThingsNetwork/gateway-conf/master/US-global_conf.json"
+				config="https://raw.githubusercontent.com/vm2m/gateway-conf/master/US-global_conf.json"
 				;;
 		esac
 	fi

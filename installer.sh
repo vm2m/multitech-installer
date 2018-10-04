@@ -680,7 +680,7 @@ if [ $skip -eq 0 ] ; then
 		if [ "$select_result" == "Yes" ] ; then
 			frequrl="https://raw.githubusercontent.com/vm2m/gateway-conf/master/NAXOO-global_conf.json"
 			freqplan="EU_863_870"
-			router="routing-naxoo.vm2m.net:1882"
+			router="ttn-naxoo.vm2m.net"
 			descr="Naxoo TTN Gateway"
 			break
 		else
